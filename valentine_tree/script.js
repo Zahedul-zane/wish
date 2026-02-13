@@ -19,19 +19,41 @@ class Star {
     constructor() {
         this.x = Math.random() * canvas.width;
         this.y = Math.random() * canvas.height;
-        this.size = Math.random() * 2;
-        this.opacity = Math.random();
+        this.size = 0.5 + Math.random() * 1.5;
+        this.length = 8 + Math.random() * 12;
+        this.speedY = 2 + Math.random() * 6;
+        this.speedX = (Math.random() - 0.5) * 0.5; // slight drift
+        this.opacity = 0.2 + Math.random() * 0.8;
     }
+    update() {
+        this.x += this.speedX;
+        this.y += this.speedY;
+        // recycle when out of view
+        if (this.y > canvas.height + this.length) {
+            this.y = -10 - Math.random() * 100;
+            this.x = Math.random() * canvas.width;
+            this.speedY = 2 + Math.random() * 6;
+            this.length = 8 + Math.random() * 12;
+            this.opacity = 0.2 + Math.random() * 0.8;
+        }
+        if (this.x < -50) this.x = canvas.width + 50;
+        if (this.x > canvas.width + 50) this.x = -50;
+    }
+
     draw() {
-        ctx.fillStyle = `rgba(255, 255, 255, ${this.opacity})`;
+        ctx.save();
+        ctx.strokeStyle = `rgba(200,220,255, ${this.opacity})`;
+        ctx.lineWidth = this.size;
         ctx.beginPath();
-        ctx.arc(this.x, this.y, this.size, 0, Math.PI*2);
-        ctx.fill();
+        // draw a short slanted line to simulate falling streak
+        ctx.moveTo(this.x, this.y);
+        ctx.lineTo(this.x - this.speedX * this.length * 0.3, this.y - this.length);
+        ctx.stroke();
+        ctx.restore();
     }
 }
 
-// Create stars
-for(let i=0; i<200; i++) stars.push(new Star());
+// initial stars will be created in reset()
 
 class Particle {
     constructor(x, y, color) {
@@ -270,6 +292,9 @@ class Branch {
 function reset() {
     branches = [];
     particles = [];
+    stars = [];
+    // Create raindrops
+    for (let i = 0; i < 300; i++) stars.push(new Star());
     // 30 Flowers growing from bottom center
     for(let i=0; i<30; i++) {
         // Fan out angles: from -160 to -20 degrees
@@ -285,8 +310,8 @@ reset();
 function animate() {
     ctx.clearRect(0, 0, canvas.width, canvas.height);
     
-    // Draw stars
-    stars.forEach(s => s.draw());
+    // Update and draw raindrops
+    stars.forEach(s => { s.update(); s.draw(); });
     
     branches.forEach(branch => {
         branch.update();
